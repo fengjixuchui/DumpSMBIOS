@@ -373,8 +373,14 @@ bool ProcOEMString(void* p)
 {
 	PSMBIOSHEADER pHdr = (PSMBIOSHEADER)p;
 	const char *str = toPointString(p);
+	const int OemStringCount = *((char*)p + 4);
+
 	_tprintf(TEXT("%s\n"), getHeaderString(11));
-	_tprintf(TEXT("OEM String: %s\n"), LocateString(str, *(((char*)p) + 4)));
+	_tprintf(TEXT("String Count: %d\n"), OemStringCount);
+	for(int i = 1; i <= OemStringCount; i++)
+	{
+		_tprintf(TEXT("OEM String%d: %s\n"), i, LocateString(str, i));
+	}
 
 	return true;
 }
@@ -487,12 +493,15 @@ void DumpSMBIOSStruct(void *Addr, UINT Len)
 	}
 }
 
+
+#include "smbios.h"
+
 int _tmain(int argc, _TCHAR* argv[])
 {
 	DWORD needBufferSize = 0;
 	// the seqence just for x86, but don't worry we know SMBIOS/DMI only exist on x86 platform
-	const BYTE byteSignature[] = { 'B', 'M', 'S', 'R' };
-	const DWORD Signature = *((DWORD*)byteSignature);
+	// const BYTE byteSignature[] = { 'B', 'M', 'S', 'R' };
+	const DWORD Signature = 'RSMB';
 	LPBYTE pBuff = NULL;
 
 	needBufferSize = GetSystemFirmwareTable(Signature, 0, NULL, 0);
@@ -515,6 +524,17 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	if (pBuff)
 		free(pBuff);
+
+	/* for SMBIOS singleton verify*/
+	wprintf(L"\r\n///////////////////////////////////////////////////////////\r\n");
+	const SMBIOS &SmBios = SMBIOS::getInstance();
+	wprintf(L"BIOS Vendor: %s\r\n", SmBios.BIOSVendor());
+	wprintf(L"BIOS Version: %s\r\n", SmBios.BIOSVersion());
+	wprintf(L"BIOS Release Data: %s\r\n", SmBios.BIOSReleaseDate());
+	wprintf(L"Board Manaufactor: %s\r\n", SmBios.BoardManufactor());
+	wprintf(L"Board Product Name: %s\r\n", SmBios.BoardProductName());
+	wprintf(L"System Manufactor: %s\r\n", SmBios.SysManufactor());
+	wprintf(L"System Product Name: %s\r\n", SmBios.SysProductName());
 	return 0;
 }
 
